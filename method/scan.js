@@ -25,33 +25,56 @@ function showVideo() {
             const isVip = vip.data.is_vip;
             if (response.status === 200) {
                 if (response.data.code === 0) {
-                    const { title, owner, cid } = response.data.data;
-                    console.log("视频标题：", title);
-                    console.log("UP主：", owner.name);
-                    console.log("cid：", cid);
-
-                    const res = await axios.get(`https://api.bilibili.com/x/player/playurl?cid=${cid}&bvid=${bvid}&fnval=16&fourk=1`, {
-                        headers: {
-                            "Cookie": fs.readFileSync("./config/cookie.txt", "utf-8").toString()
+                    const { title, owner, cid, videos, pages } = response.data.data;
+                    if (videos == 1) {
+                        console.log("标题：", title);
+                        console.log("UP主：", owner.name);
+                        console.log("cid：", cid);
+                        queue.enqueue(_showPage, cid, bvid, title, isVip);
+                    } else {
+                        console.log("UP主：", owner.name);
+                        for (let i = 0; i < videos; i++) {
+                            const item = pages.shift();
+                            console.log("标题：", item.part);
+                            console.log("cid：", item.cid);
+                            await _showPage(item.cid, bvid, `${(Array(videos.toString().length).join('0') + item.page).slice(-videos.toString().length)}_${item.part}`, isVip);
                         }
-                    });
+                    }
 
-                    r1.question(`${JSON.stringify(supportFormat(res.data.data.support_formats, isVip))}：`, function (quality) {
+                    async function _showPage(cid, bvid, title, isVip) {
+                        return new Promise(async (resolve, reject) => {
+                            const res = await axios.get(`https://api.bilibili.com/x/player/playurl?cid=${cid}&bvid=${bvid}&fnval=16&fourk=1`, {
+                                headers: {
+                                    "Cookie": fs.readFileSync("./config/cookie.txt", "utf-8").toString()
+                                }
+                            });
 
-                        queue.enqueue(downloadFile, res.data.data.dash.audio[0].baseUrl, "./data/cache/audio.m4s", "音频");
-                        for (let i = 0; i < res.data.data.dash.video.length; i++) {
-                            let item = res.data.data.dash.video[i];
-                            if (item.id === parseInt(quality)) {
-                                queue.enqueue(downloadFile, item.baseUrl, "./data/cache/video.m4s", "视频");
-                                break;
-                            }
-                        }
-                        queue.enqueue(mergeVideo, title);
-                        queue.enqueue(deleteCache);
-                        queue.enqueue(showVideo);
-                        r1.close();
-                        return resolve();
-                    });
+                            r1.question(`${JSON.stringify(supportFormat(res.data.data.support_formats, isVip))}：`, async function (quality) {
+
+                                await downloadFile( res.data.data.dash.audio[0].baseUrl, "./data/cache/audio.m4s", "音频");
+                                for (let i = 0; i < res.data.data.dash.video.length; i++) {
+                                    let item = res.data.data.dash.video[i];
+                                    if (item.id === parseInt(quality)) {
+                                        await downloadFile( item.baseUrl, "./data/cache/video.m4s", "视频");
+                                        break;
+                                    }
+                                }
+                                await mergeVideo( title);
+                                await deleteCache();
+                                if(videos != 1 && pages.length > 0){
+                                    const item = pages.shift();
+                                    const title = `${(Array(videos.toString().length).join('0') + item.page).slice(-videos.toString().length)}_${item.part}`;
+                                    console.log("标题：", title);
+                                    console.log("cid：", item.cid);
+                                    await _showPage(item.cid, bvid, title, isVip);
+                                } else {
+                                    queue.enqueue(showVideo);
+                                }
+                                return resolve();
+                            });
+                        })
+
+                    }
                 }
             }
         });
@@ -106,15 +129,11 @@ function mergeVideo(title) {
             .output(`${savePath}${title}.mp4`)
             .audioCodec('copy') // 复制音频流
             .videoCodec('copy') // 复制视频流
-            .on('start', (commandLine) => {
-                console.log('Spawned FFmpeg with command: ' + commandLine);
-            })
             .on('progress', (progress) => {
-                console.log('Processing: ' + progress.percent.toFixed(2) + '% done');
+                process.stdout.write('合并视频：' + progress.percent.toFixed(2) + '%\r');
             })
             .on('end', () => {
-                console.log('Processing finished !');
-                console.log(`file with `);
+                console.log('\nDone !\n');
                 return resolve();
             })
             .on('error', (err) => {
