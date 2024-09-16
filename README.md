@@ -1,4 +1,6 @@
-# BiliBili-DL
+# BiliBili-DL README
+
+[BiliBili-DL](https://github.com/EchoZenith/BiliBili-DL) is a tool for downloading [哔哩哔哩](https://www.bilibili.com/) videos
 
 ## Usage
 
@@ -15,6 +17,12 @@ npm i
 ```shell
 npm run start
 ```
+
+## Libraries
+
+[FFmpeg](https://github.com/FFmpeg/FFmpeg)
+[bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
+
 
 ## License
 
