@@ -22,7 +22,7 @@ function showVideo() {
                     "Cookie": fs.readFileSync("./config/cookie.txt", "utf-8").toString()
                 }
             });
-            const isVip = vip.data.is_vip;
+            const isVip = vip.data.data.is_vip;
             if (response.status === 200) {
                 if (response.data.code === 0) {
                     const { title, owner, cid, videos, pages } = response.data.data;
@@ -45,9 +45,16 @@ function showVideo() {
                         return new Promise(async (resolve, reject) => {
                             const res = await axios.get(`https://api.bilibili.com/x/player/playurl?cid=${cid}&bvid=${bvid}&fnval=16&fourk=1`, {
                                 headers: {
-                                    "Cookie": fs.readFileSync("./config/cookie.txt", "utf-8").toString()
+                                    "Cookie": fs.readFileSync("./config/cookie.txt", "utf-8").toString(),
+                                    "Referer": 'https://www.bilibili.com/',
+                                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
                                 }
                             });
+                            if(res.data.code==-404) {
+                                console.log("当前视频需要大会员才能下载，请先登录大会员账号");
+                                queue.enqueue(showVideo);
+                                return reject();
+                            }
 
                             r1.question(`${JSON.stringify(supportFormat(res.data.data.support_formats, isVip))}：`, async function (quality) {
 
