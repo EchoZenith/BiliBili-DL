@@ -50,9 +50,9 @@ async function checkLogin() {
             }
         }
         timer = setInterval(_checkLogin, 2000);
-        
+
     });
-    
+
 }
 
 export { getQRCode };

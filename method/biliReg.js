@@ -8,12 +8,12 @@ async function getRedirectUrl(url) {
         try {
             const response = await axios.get(url, { maxRedirects: 0 });
         } catch (e) {
-            if(e.response && e.response.status === 302) {
+            if (e.response && e.response.status === 302) {
                 resolve(e.response.headers.location);
-            } else { 
+            } else {
                 reject(e);
             }
-            
+
         }
     })
 }
