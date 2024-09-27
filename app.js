@@ -1,11 +1,11 @@
-import { showVideo } from "./method/scan.js";
+import { showMenu } from "./method/scan.js";
 import fs from "fs";
 import TaskQueue from "./method/TaskQueue.js";
 const queue = new TaskQueue();
 
 function main() {
     init();
-    showVideo();
+    showMenu();
 }
 
 function init() {

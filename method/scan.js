@@ -1,4 +1,4 @@
-import readLine from "./readLine.js";
+import { readLine, writeLine } from "./stdio.js";
 import fs from "fs";
 import { getQRCode } from "./login.js";
 import ffmpeg from "fluent-ffmpeg";
@@ -6,13 +6,59 @@ import axios from "axios";
 import { queue } from "../app.js";
 import { bvReg, avReg, shareReg, getRedirectUrl } from "./biliReg.js";
 
+//
+// ###########################
+// #      B站视频下载系统
+// #
+// # 1) 进入系统
+// # 2) Cookie管理
+// # 3) 视频保存路径设置
+// # 0) 退出系统
+// #
+// ###########################
+//
+
+async function showMenu() {
+    console.clear();
+    writeLine("###########################");
+    writeLine("#      B站视频下载系统");
+    writeLine("#");
+    writeLine("# 1) 进入系统");
+    // writeLine("# 2) Cookie管理");
+    // writeLine("# 3) 视频保存路径设置");
+    writeLine("# 0) 退出系统");
+    writeLine("#");
+    writeLine("###########################");
+    const code = await readLine("请输入选项：");
+    switch (code) {
+        case '1':
+            showVideo();
+            break;
+        default:
+            return;
+    }
+}
 
 function showVideo() {
+    console.clear();
+    function _showMenu() {
+        writeLine("###########################");
+        writeLine("#");
+        writeLine("# 0) 返回主菜单");
+        writeLine("#");
+        writeLine("###########################");
+    }
+    _showMenu();
+
     return new Promise(async (resolve, reject) => {
         if (!fs.existsSync("./config/cookie.txt")) {
             await getQRCode();
         }
         const msg = await readLine("请输入BV号：");
+        if(msg==="0") {
+            resolve(showMenu());
+            return;
+        }
         let avid = "";
         let bvid = "";
         if (bvReg.test(msg)) {
@@ -25,7 +71,7 @@ function showVideo() {
                 bvid = bvReg.exec(url)[0];
             }
         } else {
-            console.log("输入错误");
+            writeLine("输入错误");
             return queue.enqueue(showVideo);;
         }
         const response = await axios.get(`https://api.bilibili.com/x/web-interface/view?bvid=${bvid}&aid=${avid}`);
@@ -39,16 +85,16 @@ function showVideo() {
             if (response.data.code === 0) {
                 const { title, owner, cid, videos, pages } = response.data.data;
                 if (videos == 1) {
-                    console.log("标题：", title);
-                    console.log("UP主：", owner.name);
-                    console.log("cid：", cid);
+                    writeLine(`标题：${title}`);
+                    writeLine(`UP主：${owner.name}`);
+                    writeLine(`cid：${cid}`);
                     queue.enqueue(_showPage, cid, bvid, title, isVip);
                 } else {
                     console.log("UP主：", owner.name);
                     for (let i = 0; i < videos; i++) {
                         const item = pages.shift();
-                        console.log("标题：", item.part);
-                        console.log("cid：", item.cid);
+                        writeLine(`标题：${item.part}`);
+                        writeLine(`cid：${item.cid}`);
                         await _showPage(item.cid, bvid, `${(Array(videos.toString().length).join('0') + item.page).slice(-videos.toString().length)}_${item.part}`, isVip);
                     }
                 }
@@ -63,7 +109,7 @@ function showVideo() {
                             }
                         });
                         if (res.data.code == -404) {
-                            console.log("当前视频需要大会员才能下载，请先登录大会员账号");
+                            writeLine("当前视频需要大会员才能下载，请先登录大会员账号");
                             queue.enqueue(showVideo);
                             return reject();
                         }
@@ -81,8 +127,8 @@ function showVideo() {
                         if (videos != 1 && pages.length > 0) {
                             const item = pages.shift();
                             const title = `${(Array(videos.toString().length).join('0') + item.page).slice(-videos.toString().length)}_${item.part}`;
-                            console.log("标题：", title);
-                            console.log("cid：", item.cid);
+                            writeLine(`标题：${title}`);
+                            writeLine(`cid：${item.cid}`);
                             await _showPage(item.cid, bvid, title, isVip);
                         } else {
                             queue.enqueue(showVideo);
@@ -108,7 +154,7 @@ async function downloadFile(url, name, hint) {
                 const percentCompleted = progressEvent.loaded / progressEvent.total * 100;
                 process.stdout.write(`下载${hint ? hint : ""}: ${percentCompleted.toFixed(2)}%\r`);
                 if (percentCompleted == 100) {
-                    process.stdout.write('\n');
+                    writeLine();
                 }
             }
         },
@@ -148,11 +194,11 @@ function mergeVideo(title) {
                 process.stdout.write('合并视频：' + progress.percent.toFixed(2) + '%\r');
             })
             .on('end', () => {
-                console.log('\nDone !\n');
+                writeLine('\nDone !\n');
                 return resolve();
             })
             .on('error', (err) => {
-                console.log('An error occurred: ' + err.message);
+                writeLine('An error occurred: ' + err.message);
                 return reject(err);
             });
         command.run();
@@ -166,4 +212,4 @@ function deleteCache() {
     });
 }
 
-export { showVideo }
+export { showMenu }
