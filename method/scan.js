@@ -5,6 +5,7 @@ import ffmpeg from "fluent-ffmpeg";
 import axios from "axios";
 import { queue } from "../app.js";
 import { bvReg, avReg, shareReg, getRedirectUrl } from "./biliReg.js";
+import showCookieManager from "./cookieManager.js";
 
 //
 // ###########################
@@ -24,7 +25,7 @@ async function showMenu() {
     writeLine("#      B站视频下载系统");
     writeLine("#");
     writeLine("# 1) 进入系统");
-    // writeLine("# 2) Cookie管理");
+    writeLine("# 2) Cookie管理");
     // writeLine("# 3) 视频保存路径设置");
     writeLine("# 0) 退出系统");
     writeLine("#");
@@ -33,6 +34,9 @@ async function showMenu() {
     switch (code) {
         case '1':
             showVideo();
+            break;
+        case '2':
+            showCookieManager();
             break;
         default:
             return;
@@ -55,7 +59,7 @@ function showVideo() {
             await getQRCode();
         }
         const msg = await readLine("请输入BV号：");
-        if(msg==="0") {
+        if (msg === "0") {
             resolve(showMenu());
             return;
         }

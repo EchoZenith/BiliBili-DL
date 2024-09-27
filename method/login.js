@@ -53,7 +53,23 @@ async function checkLogin() {
         timer = setInterval(_checkLogin, 2000);
 
     });
-
+}
+async function checkCookie() {
+    if (!fs.existsSync("./config/cookie.txt")) {
+        return false;
+    }
+    const response = await axios.get('https://api.bilibili.com/x/member/web/account', {
+        headers: {
+            cookie: fs.readFileSync('./config/cookie.txt', 'utf-8')
+        }
+    });
+    if (response.status === 200) {
+        if (response.data.code === 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
 
-export { getQRCode };
+export { getQRCode, checkCookie };
