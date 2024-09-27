@@ -6,6 +6,7 @@ import axios from "axios";
 import { queue } from "../app.js";
 import { bvReg, avReg, shareReg, getRedirectUrl } from "./biliReg.js";
 import showCookieManager from "./cookieManager.js";
+import showSavePathManager from "./savePathManager.js";
 
 //
 // ###########################
@@ -19,17 +20,20 @@ import showCookieManager from "./cookieManager.js";
 // ###########################
 //
 
-async function showMenu() {
+async function showMenu(msg = "") {
     console.clear();
     writeLine("###########################");
     writeLine("#      B站视频下载系统");
     writeLine("#");
     writeLine("# 1) 进入系统");
     writeLine("# 2) Cookie管理");
-    // writeLine("# 3) 视频保存路径设置");
+    writeLine("# 3) 视频保存路径设置");
     writeLine("# 0) 退出系统");
     writeLine("#");
     writeLine("###########################");
+    if (msg != "") {
+        writeLine(msg);
+    }
     const code = await readLine("请输入选项：");
     switch (code) {
         case '1':
@@ -38,12 +42,15 @@ async function showMenu() {
         case '2':
             showCookieManager();
             break;
+        case '3':
+            showSavePathManager();
+            break;
         default:
             return;
     }
 }
 
-function showVideo() {
+function showVideo(msg = "") {
     console.clear();
     function _showMenu() {
         writeLine("###########################");
@@ -51,8 +58,11 @@ function showVideo() {
         writeLine("# 0) 返回主菜单");
         writeLine("#");
         writeLine("###########################");
+        if (msg != "") {
+            writeLine(msg)
+        }
     }
-    _showMenu();
+    _showMenu(msg);
 
     return new Promise(async (resolve, reject) => {
         if (!fs.existsSync("./config/cookie.txt")) {
@@ -135,7 +145,7 @@ function showVideo() {
                             writeLine(`cid：${item.cid}`);
                             await _showPage(item.cid, bvid, title, isVip);
                         } else {
-                            queue.enqueue(showVideo);
+                            queue.enqueue(showVideo, "保存成功");
                         }
                         return resolve();
                     })
@@ -186,12 +196,12 @@ function supportFormat(support_formats, isVip) {
     return result;
 }
 function mergeVideo(title) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         const savePath = fs.readFileSync("./config/savePath.txt", "utf-8");
         const command = ffmpeg()
             .input('./data/cache/video.m4s')
             .input('./data/cache/audio.m4s')
-            .output(`${savePath}${title}.mp4`)
+            .output(`${savePath}/${title}.mp4`)
             .audioCodec('copy') // 复制音频流
             .videoCodec('copy') // 复制视频流
             .on('progress', (progress) => {
