@@ -23,32 +23,28 @@ async function showCookieManager(msg = "") {
         case "1":
             // TODO: 登录获取Cookie
             await getQRCode();
-            showCookieManager("登录成功");
-            break;
+            return showCookieManager("登录成功");
         case "2":
             // TODO: 检测Cookie是否可用
             const flag = await checkCookie();
             if (flag) {
-                showCookieManager("Cookie可用");
+                return showCookieManager("Cookie可用");
             } else {
-                showCookieManager("Cookie不可用");
+                return showCookieManager("Cookie不可用");
             }
-            break;
         case "3":
             // TODO: 查看Cookie
             if (fs.existsSync('./config/cookie.txt')) {
-                showCookieManager(fs.readFileSync('./config/cookie.txt', 'utf-8'));
+                return showCookieManager(fs.readFileSync('./config/cookie.txt', 'utf-8'));
             } else {
-                showCookieManager("Cookie文件不存在");
+                return showCookieManager("Cookie文件不存在");
             }
-            break;
         case "4":
             // TODO: 删除Cookie
             if (fs.existsSync("./config/cookie.txt")) {
                 fs.unlinkSync('./config/cookie.txt');
             }
-            showCookieManager("删除成功");
-            break;
+            return showCookieManager("删除成功");
         default:
             return showMenu();
     }

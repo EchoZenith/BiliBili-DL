@@ -7,6 +7,7 @@ import { queue } from "../app.js";
 import { bvReg, avReg, shareReg, getRedirectUrl } from "./biliReg.js";
 import showCookieManager from "./cookieManager.js";
 import showSavePathManager from "./savePathManager.js";
+import showFileFormatManager from "./fileFormatManager.js";
 
 //
 // ###########################
@@ -28,6 +29,7 @@ async function showMenu(msg = "") {
     writeLine("# 1) 进入系统");
     writeLine("# 2) Cookie管理");
     writeLine("# 3) 视频保存路径设置");
+    writeLine("# 4) 文件格式设置");
     writeLine("# 0) 退出系统");
     writeLine("#");
     writeLine("###########################");
@@ -37,14 +39,13 @@ async function showMenu(msg = "") {
     const code = await readLine("请输入选项：");
     switch (code) {
         case '1':
-            showVideo();
-            break;
+            return showVideo();
         case '2':
-            showCookieManager();
-            break;
+            return showCookieManager();
         case '3':
-            showSavePathManager();
-            break;
+            return showSavePathManager();
+        case '4':
+            return showFileFormatManager();
         default:
             return;
     }
@@ -97,23 +98,26 @@ function showVideo(msg = "") {
         const isVip = vip.data.data.is_vip;
         if (response.status === 200) {
             if (response.data.code === 0) {
-                const { title, owner, cid, videos, pages } = response.data.data;
+                let { title, owner, cid, videos, pages } = response.data.data;
                 if (videos == 1) {
                     writeLine(`标题：${title}`);
                     writeLine(`UP主：${owner.name}`);
                     writeLine(`cid：${cid}`);
-                    queue.enqueue(_showPage, cid, bvid, title, isVip);
+                    await _showPage(cid, bvid, undefined, title, isVip);
+                    return resolve();
                 } else {
-                    console.log("UP主：", owner.name);
+                    writeLine(`UP主：${owner.name}`);
                     for (let i = 0; i < videos; i++) {
                         const item = pages.shift();
                         writeLine(`标题：${item.part}`);
                         writeLine(`cid：${item.cid}`);
-                        await _showPage(item.cid, bvid, `${(Array(videos.toString().length).join('0') + item.page).slice(-videos.toString().length)}_${item.part}`, isVip);
+                        const se = (Array(videos.toString().length).join('0') + item.page).slice(-videos.toString().length);
+                        await _showPage(item.cid, bvid, se, item.part, isVip);
                     }
+                    return resolve();
                 }
 
-                async function _showPage(cid, bvid, title, isVip) {
+                async function _showPage(cid, bvid, se, title, isVip) {
                     return new Promise(async (resolve, reject) => {
                         const res = await axios.get(`https://api.bilibili.com/x/player/playurl?cid=${cid}&bvid=${bvid}&avid=${avid}&fnval=16&fourk=1`, {
                             headers: {
@@ -128,6 +132,12 @@ function showVideo(msg = "") {
                             return reject();
                         }
                         const quality = await readLine(`${JSON.stringify(supportFormat(res.data.data.support_formats, isVip))}：`);
+                        if (quality == "q" || quality == "Q") {
+                            queue.clearAllTasks();
+                            videos = [];
+                            queue.enqueue(showVideo, "退出成功");
+                            return resolve();
+                        }
                         await downloadFile(res.data.data.dash.audio[0].baseUrl, "./data/cache/audio.m4s", "音频");
                         for (let i = 0; i < res.data.data.dash.video.length; i++) {
                             let item = res.data.data.dash.video[i];
@@ -136,20 +146,20 @@ function showVideo(msg = "") {
                                 break;
                             }
                         }
-                        await mergeVideo(title);
+                        await mergeVideo(se, title, supportFormat(res.data.data.support_formats, isVip)[quality]);
                         await deleteCache();
                         if (videos != 1 && pages.length > 0) {
                             const item = pages.shift();
-                            const title = `${(Array(videos.toString().length).join('0') + item.page).slice(-videos.toString().length)}_${item.part}`;
+                            const se = (Array(videos.toString().length).join('0') + item.page).slice(-videos.toString().length);
+                            const title = item.part;
                             writeLine(`标题：${title}`);
                             writeLine(`cid：${item.cid}`);
-                            await _showPage(item.cid, bvid, title, isVip);
+                            await _showPage(item.cid, bvid, se, title, isVip);
                         } else {
                             queue.enqueue(showVideo, "保存成功");
                         }
                         return resolve();
-                    })
-
+                    });
                 }
             }
         }
@@ -195,13 +205,22 @@ function supportFormat(support_formats, isVip) {
     });
     return result;
 }
-function mergeVideo(title) {
+
+function fileFormat(se = "01", title, quality, ext) {
+    const format = fs.readFileSync("./config/fileFormat.txt", "utf-8");
+    return format.replace('{se}', se)
+        .replace('{title}', title)
+        .replace('{quality}', quality)
+        .replace('{ext}', ext);
+}
+
+function mergeVideo(se, title, quality) {
     return new Promise(async (resolve, reject) => {
         const savePath = fs.readFileSync("./config/savePath.txt", "utf-8");
         const command = ffmpeg()
             .input('./data/cache/video.m4s')
             .input('./data/cache/audio.m4s')
-            .output(`${savePath}/${title}.mp4`)
+            .output(`${savePath}/${fileFormat(se, title, quality, 'mp4')}`)
             .audioCodec('copy') // 复制音频流
             .videoCodec('copy') // 复制视频流
             .on('progress', (progress) => {

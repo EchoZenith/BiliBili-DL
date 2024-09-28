@@ -8,6 +8,10 @@ class TaskQueue {
         this.tasks.push({ task, args });
         this.runNextTask();
     }
+    clearAllTasks() {
+        this.tasks = [];
+        this.flag = true;
+    }
 
     runNextTask() {
         if (this.tasks.length > 0 && this.flag) {
