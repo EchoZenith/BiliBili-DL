@@ -1,5 +1,4 @@
 import fs from 'fs'
-import path from 'path'
 import { readLine, writeLine } from './stdio.js';
 import { showMenu } from './scan.js';
 

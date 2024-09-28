@@ -10,6 +10,7 @@ async function showSavePathManager(msg = "") {
     writeLine("#");
     writeLine("# 1) 显示保存路径");
     writeLine("# 2) 修改保存路径");
+    writeLine("# 3) 重置保存路径");
     writeLine("# 0) 返回主菜单");
     writeLine("#");
     writeLine("###########################");
@@ -27,6 +28,10 @@ async function showSavePathManager(msg = "") {
             const newSavePath = await readLine("请输入新的保存路径：");
             fs.writeFileSync("./config/savePath.txt", path.resolve(newSavePath));
             return showSavePathManager("保存路径修改成功！");
+        case "3":
+            //TODO: 重置保存路径
+            fs.writeFileSync(`./config/savePath.txt`, path.resolve('./data'));
+            return showSavePathManager("保存路径重置成功！");
         default:
             return showMenu();
     }
