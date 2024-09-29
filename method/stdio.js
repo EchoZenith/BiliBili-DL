@@ -8,7 +8,8 @@ function readLine(msg = '') {
         // 保存对监听器函数的引用
         const onData = (res) => {
             stdin.pause();
-            res = res.replace('\r\n', ''); // 去掉回车换行符
+            res = res.replace('\r\n', ''); // 去掉Windows回车换行符
+            res = res.replace('\n', ''); // 去掉Linux换行符
             resolve(res ? res : undefined); // 如果输入为空，则返回undefined
             // 移除当前的监听器
             stdin.removeListener('data', onData);
