@@ -1,7 +1,7 @@
 import axios from "axios";
 import qrcode from "qrcode-terminal";
 import fs from "fs";
-import { writeLine } from "./stdio.js";
+import { readLine, writeLine } from "./stdio.js";
 
 let qrcode_key = "";
 let timer;
@@ -14,8 +14,7 @@ async function getQRCode() {
                 qrcode.generate(response.data.data.url);
                 qrcode_key = response.data.data.qrcode_key;
                 writeLine('二维码已生成，请使用Bilibili客户端扫码登录');
-                await checkLogin();
-                return resolve();
+                return resolve(await checkLogin());
             } else {
                 writeLine('获取二维码失败');
                 return reject();
@@ -36,12 +35,10 @@ async function checkLogin() {
             if (response.status === 200) {
                 if (response.data.code === 0) {
                     if (response.data.data.code === 0) {
-                        writeLine(response.headers['set-cookie']);
                         const cookie = response.headers['set-cookie'][0].split(';')[0];
                         fs.writeFileSync('./config/cookie.txt', cookie);
-                        writeLine('登录成功');
                         clearInterval(timer);
-                        resolve();
+                        resolve('登录成功');
                     } else if (response.data.data.code === 86038) {
                         getQRCode();
                         clearInterval(timer);
@@ -51,7 +48,11 @@ async function checkLogin() {
             }
         }
         timer = setInterval(_checkLogin, 2000);
-
+        const isQuit = await readLine();
+        if (isQuit == 'q' || isQuit == 'Q') {
+            clearInterval(timer);
+            resolve("退出成功");
+        }
     });
 }
 async function checkCookie() {

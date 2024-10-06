@@ -67,7 +67,12 @@ function showVideo(msg = "") {
 
     return new Promise(async (resolve, reject) => {
         if (!fs.existsSync("./config/cookie.txt")) {
-            await getQRCode();
+            const msg = await getQRCode();
+            if (msg == "退出成功") {
+                return resolve(showMenu(msg));
+            } else {
+                return resolve(showVideo(msg));
+            }
         }
         const msg = await readLine("请输入BV号：");
         if (msg === "0") {

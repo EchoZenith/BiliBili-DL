@@ -22,8 +22,8 @@ async function showCookieManager(msg = "") {
     switch (code) {
         case "1":
             // TODO: 登录获取Cookie
-            await getQRCode();
-            return showCookieManager("登录成功");
+            const msg = await getQRCode();
+            return showCookieManager(msg);
         case "2":
             // TODO: 检测Cookie是否可用
             const flag = await checkCookie();
