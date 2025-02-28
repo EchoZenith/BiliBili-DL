@@ -41,7 +41,7 @@ def main():
             download_file(video_stream["video_base_url"], video_save_path, "视频")
             download_file(video_stream["audio_base_url"], audio_save_path, "音频")
             merge_video_audio(video_save_path, audio_save_path, output_path)
-            delete_cache_video(video_save_path, audio_save_path, cid_path)
+            delete_video_cache(video_save_path, audio_save_path, cid_path)
 
 
 def get_video_id():  # 获取av|bv号
@@ -170,7 +170,7 @@ def merge_video_audio(video_path, audio_path, output_path):  # 合并视频音�
     print("合并完成！")
 
 
-def delete_cache_video(video_path, audio_path, cid_path):  # 删除合并前的缓存
+def delete_video_cache(video_path, audio_path, cid_path):  # 删除合并前的缓存
     os.remove(video_path)
     os.remove(audio_path)
     os.rmdir(cid_path)
@@ -183,11 +183,12 @@ def bytes_to_mb(bytes_value):  # 将字节转换为MB
 
 if __name__ == '__main__':
     session = requests.Session()
-    with open("./config/cookie.txt", "r", encoding="utf-8") as file:
-        ck = {
-            "SESSDATA": file.read()
-        }
-        session.cookies.update(ck)
+    if os.path.exists("config/cookie.txt"):  # 存在cookie文件的话，就添加进requests
+        with open("config/cookie.txt", "r", encoding="utf-8") as file:
+            ck = {
+                "SESSDATA": file.read()
+            }
+            session.cookies.update(ck)
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
         "Referer": "https://www.bilibili.com"
