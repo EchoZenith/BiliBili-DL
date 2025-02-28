@@ -1,4 +1,11 @@
-# B站视频下载工具
+<p align="center">
+  <img src="BiliBili-DL.ico" width="200" height="200" alt="">
+</p>
+<div align="center">
+<h1> B站视频下载工具
+</h1>
+    <p>当前版本：0.1.0</p>
+ </div>
 
 一个用于下载 B站视频的开源项目，通过不同的分支提供 Node.js 和 Python 两种语言的实现。用户可以根据自己的需求选择合适的语言版本。
 
@@ -103,6 +110,22 @@ pip install -r requirements.txt
 ```bash
 python main.py
 ```
+### 打包为可执行文件
+为了方便在没有 Python 环境的系统上运行此工具，可以使用 PyInstaller 将其打包为独立的 .exe 文件。
+#### 打包步骤
+1. 安装 PyInstaller：
+```bash
+pip install pyinstaller
+```
+2. 打包主程序：
+```bash
+pyinstaller.exe -D -i "BiliBili-DL.ico" --onefile --name="BiliBili下 载" .\main.py
+```
+3. 打包登录程序：
+```bash
+pyinstaller.exe -D -i "BiliBili-DL.ico" --onefile --name="二维码登录" .\login.py
+```
+打包完成后，生成的 .exe 文件位于 dist 文件夹中。
 
 ## 支持的平台
 
@@ -125,6 +148,10 @@ python main.py
 3. 提交你的更改：`git commit -m "Add some feature"`。
 4. 推送到你的分支：`git push origin feature/your-feature-name`。
 5. 提交 Pull Request。
+
+## 历史 Star 数
+
+[![Stargazers over time](https://starchart.cc/EchoZenith/BiliBili-DL.svg?variant=adaptive)](https://starchart.cc/EchoZenith/BiliBili-DL)
 
 ## 许可证
 
