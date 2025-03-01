@@ -1,3 +1,4 @@
+import argparse
 import os
 import re
 import subprocess
@@ -25,7 +26,20 @@ epReg = r"(ep|EP|Ep|eP)\d+"  # 暂未支持
 
 
 def main():
-    video_id = get_video_id()
+    # 使用 argparse 解析命令行参数
+    parser = argparse.ArgumentParser(description="批量下载文件")
+    parser.add_argument("-file", type=str, help="包含视频链接的文件路径")
+    args = parser.parse_args()
+    if args.file is not None:
+        urls = read_urls_from_file(args.file)
+        for url in urls:
+            download_and_process_video(url)
+    else:
+        download_and_process_video()
+
+
+def download_and_process_video(text=None):  # 下载视频并处理
+    video_id = get_video_id(text)
     video_info = get_video_info(video_id)
     video_episodes = get_video_episodes(int(video_info["data"]["videos"]))
     for i in video_episodes:
@@ -44,8 +58,18 @@ def main():
             delete_video_cache(video_save_path, audio_save_path, cid_path)
 
 
-def get_video_id():  # 获取av|bv号
-    data = input("请输入BV号：")
+def read_urls_from_file(file_path):  # 从文件中逐行读取url
+    with open(file_path, 'r') as file:
+        urls = file.readlines()
+    return [url.strip() for url in urls]
+
+
+def get_video_id(text=None):  # 获取av|bv号
+    if text is None:
+        data = input("请输入BV号：")
+    else:
+        print(f"请输入BV号：{text}")
+        data = text
     avid = ""
     bvid = ""
     result_bv = re.search(bvReg, data)
@@ -194,4 +218,5 @@ if __name__ == '__main__':
         "Referer": "https://www.bilibili.com"
     }
     session.headers.update(headers)
+
     main()
